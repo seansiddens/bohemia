@@ -7,8 +7,8 @@ RELEASE_DIR := $(BUILD_DIR)/release
 INCLUDE_DIR := third_party
 
 # Common flags
-CXX_FLAGS := -std=c++17 -I$(INCLUDE_DIR)
-LFLAGS := -lblas -llapack
+CXX_FLAGS := -std=c++17 -I$(INCLUDE_DIR) -I/usr/include/tbb
+LFLAGS := -lblas -llapack -ltbb
 
 # Debug flags
 DEBUG_FLAGS := -Wall -DLOG_LEVEL=2  # 2 corresponds to DEBUG level
