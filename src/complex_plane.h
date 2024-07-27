@@ -12,7 +12,7 @@ public:
     ~ComplexPlane();
     void add_point(const std::complex<double>& point);
     uint64_t parallel_max() const;
-    void save_image(const std::string& filename, double gamma);
+    void save_image(const std::string& filename, double gamma, std::string color_map);
 
 private:
     int width, height;

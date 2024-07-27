@@ -65,13 +65,23 @@ uint64_t ComplexPlane::parallel_max() const {
     return *std::max_element(local_maxima.begin(), local_maxima.end());
 }
 
-void ComplexPlane::save_image(const std::string& filename, double gamma) {
+void ComplexPlane::save_image(const std::string& filename, double gamma, std::string color_map) {
     uint64_t max_count = parallel_max();
     LOG_INFO << "Max bin count: " << max_count;
     std::vector<unsigned char> image(width * height * 3, 0);
 
     // Calculate log(max_count + 1) once
     double log_max = std::log(max_count + 1);
+
+    tinycolormap::ColormapType color_map_type;
+    if (color_map == "viridis") {
+        color_map_type = tinycolormap::ColormapType::Viridis;
+    } else if (color_map == "plasma") {
+        color_map_type = tinycolormap::ColormapType::Plasma;
+    } else {
+        LOG_ERROR << "Unknown color map type! Defaulting to grayscale.";
+        color_map_type = tinycolormap::ColormapType::Gray;
+    }
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -90,7 +100,8 @@ void ComplexPlane::save_image(const std::string& filename, double gamma) {
                 // Apply gamma correction
                 double gamma_corrected = std::pow(log_scaled, 1.0 / gamma);
 
-                const tinycolormap::Color color = tinycolormap::GetColor(gamma_corrected, tinycolormap::ColormapType::Viridis);
+
+                tinycolormap::Color color = tinycolormap::GetColor(gamma_corrected, color_map_type);
                 image[index] = static_cast<unsigned char>(color.r() * 255);     // R
                 image[index + 1] = static_cast<unsigned char>(color.g() * 255); // G
                 image[index + 2] = static_cast<unsigned char>(color.b() * 255); // B

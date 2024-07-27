@@ -1,12 +1,17 @@
 {
-    "resolution": 1000,
-    "samples": 500000,
+    "resolution": 4000,
+    "samples": 5000000,
+    "eigenvalues": {
+        "mode": "load",
+        "file": "eigenvalues.bin"
+    },
     "visualization_params": {
         "real_min": -50.0,
         "real_max": 50.0,
         "imaginary_min": -50.0,
         "imaginary_max": 50.0,
         "output_file": "output.png",
-        "gamma": 2.2
+        "gamma": 2.2,
+        "color_map": "viridis"
     }
 }
