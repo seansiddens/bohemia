@@ -10,6 +10,7 @@
 #include "XoshiroCpp.h"
 
 #include "matrix.h"
+#include "util.h"
 
 class MatrixGenerator {
 private:
@@ -30,7 +31,7 @@ public:
         };
 
         auto tridiagonal_generator = [values](int i, int j) mutable {
-            static thread_local XoshiroCpp::Xoshiro256PlusPlus rng(std::chrono::system_clock::now().time_since_epoch().count());
+            static thread_local XoshiroCpp::Xoshiro256PlusPlus rng(GlobalSeedGenerator::get_next_seed());
             if (i == j || i == j + 1 || i == j - 1) {
                 size_t index = rng() % values.size();
                 return values[index];
