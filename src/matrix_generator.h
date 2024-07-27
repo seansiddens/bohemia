@@ -3,6 +3,11 @@
 #include <vector>
 #include <complex>
 #include <functional>
+#include <random>
+
+#include <chrono>
+
+#include "XoshiroCpp.h"
 
 #include "matrix.h"
 
@@ -14,8 +19,25 @@ private:
 public:
     MatrixGenerator(int size, std::function<std::complex<double>(int, int)> generator);
 
-    Matrix generate();
+    Matrix generate() const;
 
     // Pre-defined generators
-    static MatrixGenerator tridiagonal_10x10();
+    template<int N>
+    static MatrixGenerator tridiagonal() {
+        const std::vector<std::complex<double>> values = {
+            0.0, 1.0, -1.0, std::complex<double>(0, 1), std::complex<double>(0, -1),
+            20.0, -20.0, std::complex<double>(0, 20), std::complex<double>(0, -20)
+        };
+
+        auto tridiagonal_generator = [values](int i, int j) mutable {
+            static thread_local XoshiroCpp::Xoshiro256PlusPlus rng(std::chrono::system_clock::now().time_since_epoch().count());
+            if (i == j || i == j + 1 || i == j - 1) {
+                size_t index = rng() % values.size();
+                return values[index];
+            }
+            return std::complex<double>(0, 0);
+        };
+
+        return MatrixGenerator(N, tridiagonal_generator);
+    }
 };
