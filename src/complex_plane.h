@@ -8,13 +8,14 @@
 
 class ComplexPlane {
 public:
-    ComplexPlane(int w, int h, double rmin, double rmax, double imin, double imax);
+    ComplexPlane(int resolution, double rmin, double rmax, double imin, double imax);
     ~ComplexPlane();
     void add_point(const std::complex<double>& point);
-    void save_image(const std::string& filename);
+    uint64_t parallel_max() const;
+    void save_image(const std::string& filename, double gamma);
 
 private:
     int width, height;
     double real_min, real_max, imag_min, imag_max;
-    std::atomic<uint64_t> *bins;
+    std::atomic<uint64_t> *histogram;
 };
