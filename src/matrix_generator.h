@@ -4,18 +4,18 @@
 #include <complex>
 #include <functional>
 
+#include "matrix.h"
+
 class MatrixGenerator {
 private:
-    int rows, cols;
+    int size;
     std::function<std::complex<double>(int, int)> generator;
 
 public:
-    MatrixGenerator(int rows, int cols, std::function<std::complex<double>(int, int)> generator);
+    MatrixGenerator(int size, std::function<std::complex<double>(int, int)> generator);
 
-    std::vector<std::complex<double>> generate();
+    Matrix generate();
 
-    std::vector<int> shape();
-
-    // Declare the static function here
+    // Pre-defined generators
     static MatrixGenerator tridiagonal_10x10();
 };

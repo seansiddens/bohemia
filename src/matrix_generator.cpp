@@ -1,25 +1,26 @@
 #include "matrix_generator.h"
 
+#include "logger.h"
+
 #include <random>
 
-MatrixGenerator::MatrixGenerator(int rows, int cols, std::function<std::complex<double>(int, int)> generator)
-    : rows(rows), cols(cols), generator(generator) {}
+MatrixGenerator::MatrixGenerator(int size, std::function<std::complex<double>(int, int)> generator)
+    : size(size), generator(generator) {}
 
-
-std::vector<std::complex<double>> MatrixGenerator::generate() {
-    std::vector<std::complex<double>> matrix(rows * cols);
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            matrix[i * cols + j] = generator(i, j);
+/// Generate a matrix of size n x n with random values>
+Matrix MatrixGenerator::generate() {
+    std::vector<std::complex<double>> values(size * size);
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            values[i * size + j] = generator(i, j);
         }
     }
-    return matrix;
+
+    return Matrix(size, std::move(values));
 }
 
-std::vector<int> MatrixGenerator::shape() {
-    return {rows, cols};
-}
-
+/// Generate a tridiagonal matrix of size 10x10 with random values
+/// Values randomly chosen from {0, 1, -1, i, -i, 20, -20, i*20, -i*20}
 MatrixGenerator MatrixGenerator::tridiagonal_10x10() {
     const std::vector<std::complex<double>> values = {
         0.0, 1.0, -1.0, std::complex<double>(0, 1), std::complex<double>(0, -1),
@@ -37,5 +38,5 @@ MatrixGenerator MatrixGenerator::tridiagonal_10x10() {
         return std::complex<double>(0, 0);
     };
 
-    return MatrixGenerator(10, 10, tridiagonal_generator);
+    return MatrixGenerator(10, tridiagonal_generator);
 }
