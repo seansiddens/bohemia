@@ -8,11 +8,14 @@
 #include <chrono>
 #include <fstream>
 #include <mutex>
+#include <iomanip>
 
 #include "matrix.h"
 #include "matrix_generator.h"
-#include "complex_plane.h"
+#include "image.h"
 #include "logger.h"
+#include "util.h"
+#include "eigenvalue.h"
 
 #include "json.h"
 using json = nlohmann::json;
@@ -43,7 +46,8 @@ void write_eigenvalues_to_file(const std::vector<std::complex<double>>& eigenval
     file.write(reinterpret_cast<const char*>(eigenvalues.data()), size * sizeof(std::complex<double>));
 
     if (file.good()) {
-        LOG_INFO << "Successfully wrote " << size << " eigenvalues to " << filename;
+        LOG_INFO << "Succesfully wrote: " << std::scientific << std::setprecision(2) << static_cast<double>(size) << " eigenvalues";
+        LOG_INFO << "Total size: " << total_size / (1024 * 1024) << " MB.";
     } else {
         LOG_ERROR << "Error occurred while writing eigenvalues to " << filename;
     }
@@ -65,7 +69,8 @@ std::vector<std::complex<double>> load_eigenvalues_from_file(const std::string& 
     file.read(reinterpret_cast<char*>(eigenvalues.data()), size * sizeof(std::complex<double>));
 
     if (file.good()) {
-        LOG_INFO << "Successfully loaded " << size << " eigenvalues from " << filename;
+        LOG_INFO << "Successfully loaded: " << std::scientific << std::setprecision(2) << static_cast<double>(size) << " eigenvalues";
+        LOG_INFO << "Total size: " << (sizeof(size_t) + size * sizeof(std::complex<double>)) / (1024 * 1024) << " MB.";
     } else {
         LOG_ERROR << "Error occurred while reading eigenvalues from " << filename;
         eigenvalues.clear();
@@ -96,10 +101,14 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    GlobalSeedGenerator::initialize(std::chrono::system_clock::now().time_since_epoch().count());
+
     // Extract parameters from config
     int resolution = config["resolution"];
     int samples = config["samples"];
+    int precision = config["precision"];
     auto& eigenvalue_config = config["eigenvalues"];
+    bool ignore_reals = config["ignore_reals"];
     std::string eigenvalue_mode = eigenvalue_config["mode"];
     std::string eigenvalue_file = eigenvalue_config["file"];
     
@@ -114,11 +123,8 @@ int main(int argc, char* argv[]) {
     double gamma = visualization_params["gamma"];
     assert(gamma > 0);
 
-    // Define matrix generator.
-    auto mat_gen = MatrixGenerator::tridiagonal_10x10();
-
     // Define plane using the loaded parameters
-    auto plane = ComplexPlane(resolution, real_min, real_max, imaginary_min, imaginary_max);
+    auto plane = ImageHistogram(resolution, real_min, real_max, imaginary_min, imaginary_max);
 
     int num_threads = std::thread::hardware_concurrency();
     int samples_per_thread = samples / num_threads;
@@ -149,11 +155,18 @@ int main(int argc, char* argv[]) {
         std::cout << "Processing: " << std::flush;
 
         auto worker = [&](int thread_id, int thread_samples) {
+            // Define matrix generator.
+            // TODO: Ignore eigenvalues with no imaginary component.
+            // TODO: Can exploit symmetry to and not need to store a large number of eigenvalues.
+            auto mat_gen = MatrixGenerator::tridiagonal<10>();
             std::vector<std::complex<double>> local_eigenvalues;
             for (int i = 0; i < thread_samples; i++) {
                 auto matrix = mat_gen.generate();
                 auto eigenvalues = matrix.compute_eigenvalues();
                 for (const auto& eigenvalue : eigenvalues) {
+                    if (ignore_reals && eigenvalue.real() == 0) {
+                        continue;
+                    }
                     plane.add_point(eigenvalue);
                     if (eigenvalue_mode == "dump") {
                         local_eigenvalues.push_back(eigenvalue);
@@ -195,10 +208,9 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // plane.save_image(output_file, gamma, color_map, pmf);
     LOG_INFO << "Saving image...";
-
-    plane.save_image(output_file, gamma, color_map);
-
+    plane.save_from_histogram(output_file, gamma, color_map);
     LOG_INFO << "Finished saving image";
 
     return 0;
